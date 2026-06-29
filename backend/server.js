@@ -3,46 +3,43 @@ const cors = require("cors");
 require("dotenv").config();
 
 console.log("API Key Exists:", !!process.env.GEMINI_API_KEY);
-console.log(
-    "API Key Prefix:",
-    process.env.GEMINI_API_KEY?.substring(0, 8)
-);
+console.log("API Key Prefix:", process.env.GEMINI_API_KEY?.substring(0, 8));
 
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-
-const genAI = new GoogleGenerativeAI(
-    process.env.GEMINI_API_KEY
-);
-
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 console.log("Gemini client initialized");
 
 const app = express();
 
-app.use(cors());
+// ✅ Fix: explicit CORS config + preflight handler
+const corsOptions = {
+  origin: "*",
+  methods: ["GET", "POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type"]
+};
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions)); // ✅ Handle preflight BEFORE routes
+
 app.use(express.json());
 
 app.get("/", (req, res) => {
-    res.send("AI Test Data Backend Running");
+  res.send("AI Test Data Backend Running");
 });
 
 app.post("/generate", async (req, res) => {
+  try {
+    const { count, country } = req.body;
+    console.log("Generate Request:", req.body);
 
-    try {
-
-        const { count, country } = req.body;
-
-        console.log("Generate Request:", req.body);
-
-        const prompt = `
+    const prompt = `
 Generate ${count} realistic customer records for ${country}.
 
 Return ONLY valid JSON.
-
 Do not wrap in markdown.
 Do not use code blocks.
 
 Format:
-
 [
   {
     "name": "John Smith",
@@ -54,47 +51,25 @@ Format:
 ]
 `;
 
-        const model = genAI.getGenerativeModel({
-            model: "gemini-2.5-flash"
-        });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
+    console.log("Gemini Response:", text);
 
-        const result =
-            await model.generateContent(prompt);
+    const cleaned = text.replace(/```json/g, "").replace(/```/g, "").trim();
+    const data = JSON.parse(cleaned);
 
-        const text =
-            result.response.text();
+    res.json(data);
 
-        console.log("Gemini Response:");
-        console.log(text);
-
-        const cleaned = text
-            .replace(/```json/g, "")
-            .replace(/```/g, "")
-            .trim();
-
-        const data =
-            JSON.parse(cleaned);
-
-        res.json(data);
-
-    }
-    catch (error) {
-
-        console.error("Gemini Error:");
-        console.error(error);
-
-        res.status(500).json({
-            error: error.message
-        });
-
-    }
-
+  } catch (error) {
+    console.error("Gemini Error:", error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 console.log("Generate route loaded");
 
 const PORT = process.env.PORT || 3000;
-
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
