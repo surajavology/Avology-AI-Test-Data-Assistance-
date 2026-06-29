@@ -23,19 +23,19 @@ async function generateData() {
 
     try {
 
-        const response = await fetch(
-            "http://localhost:3000/generate",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    country,
-                    count
-                })
-            }
-        );
+const response = await fetch(
+    "https://avology-ai-test-data-backend.onrender.com/generate",
+    {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            country,
+            count
+        })
+    }
+);
 
         const result =
             await response.json();
