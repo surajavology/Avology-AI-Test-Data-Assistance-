@@ -3,9 +3,10 @@ const cors = require("cors");
 require("dotenv").config();
 
 console.log("API Key Exists:", !!process.env.GEMINI_API_KEY);
-console.log("API Key Prefix:", process.env.GEMINI_API_KEY?.substring(0, 8));
-
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+console.log(
+    "API Key Prefix:",
+    process.env.GEMINI_API_KEY?.substring(0, 8)
+);
 
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
